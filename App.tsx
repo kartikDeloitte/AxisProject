@@ -5,7 +5,7 @@
  * @format
  */
 
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import type {PropsWithChildren} from 'react';
 import {
   SafeAreaView,
@@ -15,6 +15,8 @@ import {
   Text,
   useColorScheme,
   View,
+  NativeModule,
+  NativeModules,
 } from 'react-native';
 
 import {
@@ -24,74 +26,50 @@ import {
   LearnMoreLinks,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
+import ReduxProvider from './store';
+import {useDispatch, useSelector} from 'react-redux';
+import Comments from './Comments';
 
 type SectionProps = PropsWithChildren<{
   title: string;
 }>;
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
-
 function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
-
+  const [deviceDetails, setDeviceDetails] = useState<Object>({});
+  const [visisble, setVisible] = useState<boolean>(true);
   const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+    flex: 1,
   };
+  const {AxisModule} = NativeModules;
+  useEffect(() => {
+    AxisModule.myCallBack(item => {
+      setDeviceDetails(JSON.parse(item));
+    });
+  }, []);
 
   return (
     <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
+      <ReduxProvider>
+        {visisble ? (
+          <>
+            {Object.keys(deviceDetails).map(item => {
+              return (
+                <Text key={item} style={{fontSize: 24, fontWeight: '800'}}>
+                  {item} - {deviceDetails[item]}
+                </Text>
+              );
+            })}
+            <Text
+              onPress={() => setVisible(!visisble)}
+              style={{color: 'blue', fontSize: 24, textAlign: 'center'}}>
+              NEXT
+            </Text>
+          </>
+        ) : (
+          <Comments goBack={() => setVisible(!visisble)} />
+        )}
+      </ReduxProvider>
     </SafeAreaView>
   );
 }
